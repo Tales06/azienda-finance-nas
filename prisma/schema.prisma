@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  OPERATOR
+  VIEWER
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum CategoryType {
+  INCOME
+  EXPENSE
+  BOTH
+}
+
+model Company {
+  id            String         @id @default(cuid())
+  name          String
+  baseCurrency  String         @default("EUR")
+  users         User[]
+  categories    Category[]
+  transactions  Transaction[]
+  exchangeRates ExchangeRate[]
+  auditLogs     AuditLog[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model User {
+  id           String        @id @default(cuid())
+  companyId    String
+  username     String        @unique
+  displayName  String
+  passwordHash String
+  role         UserRole      @default(VIEWER)
+  isActive     Boolean       @default(true)
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  transactions Transaction[] @relation("TransactionCreator")
+  auditLogs    AuditLog[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Category {
+  id           String          @id @default(cuid())
+  companyId    String
+  name         String
+  type         CategoryType
+  color        String          @default("#2563eb")
+  isActive     Boolean         @default(true)
+  company      Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@unique([companyId, name, type])
+}
+
+model Transaction {
+  id              String          @id @default(cuid())
+  companyId       String
+  categoryId      String
+  createdById     String
+  type            TransactionType
+  amountCents     Int
+  amountBaseCents Int
+  currencyCode    String
+  exchangeRate    Float?
+  description     String?
+  paymentMethod   String?
+  reference       String?
+  notes           String?
+  transactionDate DateTime
+  company         Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category        Category        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  createdBy       User            @relation("TransactionCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([companyId, transactionDate])
+  @@index([categoryId])
+  @@index([currencyCode])
+}
+
+model ExchangeRate {
+  id            String   @id @default(cuid())
+  companyId     String
+  baseCurrency  String
+  quoteCurrency String
+  rate          Float
+  effectiveDate DateTime
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([companyId, baseCurrency, quoteCurrency, effectiveDate])
+  @@index([companyId, quoteCurrency, effectiveDate])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  companyId   String
+  userId      String?
+  action      String
+  entityType  String
+  entityId    String?
+  description String?
+  metadata    Json?
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  @@index([companyId, createdAt])
+  @@index([entityType, entityId])
+}

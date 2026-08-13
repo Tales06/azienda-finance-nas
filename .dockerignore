@@ -1,0 +1,13 @@
+node_modules
+.next
+npm-debug.log
+Dockerfile
+docker-compose.yml
+.git
+.env
+.env.local
+README.md
+*.zip
+tmp-*
+backups
+data
