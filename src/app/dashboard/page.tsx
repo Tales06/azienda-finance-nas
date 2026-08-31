@@ -1,7 +1,8 @@
+import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { DashboardCharts } from "@/components/dashboard-charts";
 import { requireUser } from "@/lib/guards";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatDate, formatDateInput } from "@/lib/format";
 import { getCompany, getTransactions } from "@/lib/queries";
 import { buildCategoryBreakdown, buildMonthlySeries, buildSummary, previousPeriod, parseDateRange } from "@/lib/reporting";
 
@@ -39,11 +40,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         <div className="muted">
           Periodo: <strong>{formatDate(dateRange.from)}</strong> — <strong>{formatDate(dateRange.to)}</strong>
         </div>
-        <form className="inline-actions" method="get">
-          <input className="input" type="date" name="from" defaultValue={from ?? dateRange.from.toISOString().slice(0, 10)} />
-          <input className="input" type="date" name="to" defaultValue={to ?? dateRange.to.toISOString().slice(0, 10)} />
-          <button className="button button-secondary" type="submit">Aggiorna</button>
-        </form>
+        <div className="inline-actions">
+          <Link href="/transactions?all=1" className="button button-secondary">Tutti i movimenti</Link>
+          <form className="inline-actions" method="get">
+            <input className="input" type="date" name="from" defaultValue={from ?? formatDateInput(dateRange.from)} />
+            <input className="input" type="date" name="to" defaultValue={to ?? formatDateInput(dateRange.to)} />
+            <button className="button button-secondary" type="submit">Aggiorna</button>
+          </form>
+        </div>
       </div>
 
       <section className="stat-grid">

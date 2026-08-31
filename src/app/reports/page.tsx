@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/app-shell";
 import { DashboardCharts } from "@/components/dashboard-charts";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatDate, formatDateInput } from "@/lib/format";
 import { requireUser } from "@/lib/guards";
 import { getCompany, getTransactions } from "@/lib/queries";
 import { buildCategoryBreakdown, buildCurrencyBreakdown, buildMonthlySeries, buildSummary, parseDateRange } from "@/lib/reporting";
@@ -23,8 +23,8 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   const monthlySeries = buildMonthlySeries(transactions);
   const currencyBreakdown = buildCurrencyBreakdown(transactions);
   const exportQuery = new URLSearchParams({
-    from: from ?? dateRange.from.toISOString().slice(0, 10),
-    to: to ?? dateRange.to.toISOString().slice(0, 10)
+    from: from ?? formatDateInput(dateRange.from),
+    to: to ?? formatDateInput(dateRange.to)
   }).toString();
 
   return (
@@ -36,8 +36,8 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
     >
       <div className="toolbar">
         <form className="inline-actions" method="get">
-          <input className="input" type="date" name="from" defaultValue={from ?? dateRange.from.toISOString().slice(0, 10)} />
-          <input className="input" type="date" name="to" defaultValue={to ?? dateRange.to.toISOString().slice(0, 10)} />
+          <input className="input" type="date" name="from" defaultValue={from ?? formatDateInput(dateRange.from)} />
+          <input className="input" type="date" name="to" defaultValue={to ?? formatDateInput(dateRange.to)} />
           <button className="button button-secondary" type="submit">Aggiorna report</button>
         </form>
         <div className="inline-actions">

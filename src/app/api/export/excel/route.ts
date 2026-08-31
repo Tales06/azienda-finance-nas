@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
   }
 
   const search = request.nextUrl.searchParams;
+  const showAll = search.get("all") === "1";
   const dateRange = parseDateRange(search.get("from") ?? undefined, search.get("to") ?? undefined);
   const type = search.get("type") ?? undefined;
   const categoryId = search.get("categoryId") ?? undefined;
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
   const [company, transactions] = await Promise.all([
     getCompany(user.companyId),
     getTransactions(user.companyId, {
-      ...dateRange,
+      ...(showAll ? {} : dateRange),
       type,
       categoryId,
       currencyCode,

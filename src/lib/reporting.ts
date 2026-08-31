@@ -15,16 +15,15 @@ export type TransactionWithRelations = Prisma.TransactionGetPayload<{
 
 export function getDefaultDateRange() {
   const now = new Date();
-  const from = new Date(now.getFullYear(), now.getMonth(), 1);
-  const to = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
   return { from, to };
 }
 
 export function parseDateRange(inputFrom?: string, inputTo?: string) {
   const fallback = getDefaultDateRange();
   const from = inputFrom ? new Date(`${inputFrom}T00:00:00`) : fallback.from;
-  const fallbackTo = fallback.to.toISOString().slice(0, 10);
-  const to = inputTo ? new Date(`${inputTo}T23:59:59`) : new Date(`${fallbackTo}T23:59:59`);
+  const to = inputTo ? new Date(`${inputTo}T23:59:59`) : fallback.to;
   return { from, to };
 }
 

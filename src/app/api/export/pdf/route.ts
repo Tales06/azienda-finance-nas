@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
   }
 
   const search = request.nextUrl.searchParams;
+  const showAll = search.get("all") === "1";
   const dateRange = parseDateRange(search.get("from") ?? undefined, search.get("to") ?? undefined);
   const type = search.get("type") ?? undefined;
   const categoryId = search.get("categoryId") ?? undefined;
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
   const [company, transactions] = await Promise.all([
     getCompany(user.companyId),
     getTransactions(user.companyId, {
-      ...dateRange,
+      ...(showAll ? {} : dateRange),
       type,
       categoryId,
       currencyCode,
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest) {
   };
 
   drawLine(company.name, { bold: true, size: 18 });
-  drawLine(`Report movimenti dal ${formatDate(dateRange.from)} al ${formatDate(dateRange.to)}`);
+  drawLine(showAll ? "Report di tutti i movimenti" : `Report movimenti dal ${formatDate(dateRange.from)} al ${formatDate(dateRange.to)}`);
   drawLine(`Entrate reali: ${formatCurrency(summary.incomeBaseCents, company.baseCurrency)}`, { color: [0.08, 0.5, 0.24] });
   drawLine(`Uscite reali: ${formatCurrency(summary.expenseBaseCents, company.baseCurrency)}`, { color: [0.8, 0.15, 0.15] });
   drawLine(`Saldo reale: ${formatCurrency(summary.balanceBaseCents, company.baseCurrency)}`, { bold: true });

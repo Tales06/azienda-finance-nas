@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { CURRENCIES, paymentMethodLabel, settlementStatusLabel } from "@/lib/constants";
-import { formatCurrency, formatDate } from "@/lib/format";
+import { formatCurrency, formatDate, formatDateInput } from "@/lib/format";
 import { requireUser } from "@/lib/guards";
 import { getCategories, getCompany, getTransactions } from "@/lib/queries";
 import { buildSummary, parseDateRange } from "@/lib/reporting";
@@ -21,9 +21,10 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
   const categoryId = typeof params.categoryId === "string" ? params.categoryId : undefined;
   const currencyCode = typeof params.currencyCode === "string" ? params.currencyCode : undefined;
   const settlementStatus = typeof params.settlementStatus === "string" ? params.settlementStatus : undefined;
+  const showAll = params.all === "1";
   const dateRange = parseDateRange(from, to);
   const transactions = await getTransactions(user.companyId, {
-    ...dateRange,
+    ...(showAll ? {} : dateRange),
     type,
     categoryId,
     currencyCode,
@@ -32,6 +33,7 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
   });
   const summary = buildSummary(transactions);
   const query = new URLSearchParams();
+  if (showAll) query.set("all", "1");
   if (from) query.set("from", from);
   if (to) query.set("to", to);
   if (type) query.set("type", type);
@@ -76,11 +78,11 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
         <form className="filters-grid" method="get">
           <div className="field">
             <label htmlFor="from">Dal</label>
-            <input className="input" id="from" type="date" name="from" defaultValue={from ?? dateRange.from.toISOString().slice(0, 10)} />
+            <input className="input" id="from" type="date" name="from" defaultValue={showAll ? "" : from ?? formatDateInput(dateRange.from)} />
           </div>
           <div className="field">
             <label htmlFor="to">Al</label>
-            <input className="input" id="to" type="date" name="to" defaultValue={to ?? dateRange.to.toISOString().slice(0, 10)} />
+            <input className="input" id="to" type="date" name="to" defaultValue={showAll ? "" : to ?? formatDateInput(dateRange.to)} />
           </div>
           <div className="field">
             <label htmlFor="type">Tipo</label>
@@ -122,10 +124,13 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
           </div>
           <div className="full-width form-actions">
             <button className="button button-secondary" type="submit">Applica filtri</button>
-            <Link className="button button-ghost" href="/transactions">Reset</Link>
+            <Link className="button button-ghost" href="/transactions">Mostra solo oggi</Link>
+            {!showAll ? <Link className="button button-ghost" href="/transactions?all=1">Tutti i movimenti</Link> : null}
           </div>
         </form>
       </section>
+
+      {showAll ? <p className="helper-text">Stai visualizzando tutti i movimenti, senza filtro data.</p> : null}
 
       <section className="stat-grid">
         <article className="card stat-card">
