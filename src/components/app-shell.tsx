@@ -15,10 +15,10 @@ type AppShellProps = {
 };
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: "◈", roles: ["ADMIN", "MANAGER", "OPERATOR", "VIEWER"] },
+  { href: "/dashboard", label: "Dashboard", icon: "◈", roles: ["ADMIN", "MANAGER", "VIEWER"] },
   { href: "/transactions", label: "Movimenti", icon: "⇄", roles: ["ADMIN", "MANAGER", "OPERATOR", "VIEWER"] },
-  { href: "/categories", label: "Categorie", icon: "⊞", roles: ["ADMIN", "MANAGER", "OPERATOR", "VIEWER"] },
-  { href: "/reports", label: "Report", icon: "◐", roles: ["ADMIN", "MANAGER", "OPERATOR", "VIEWER"] },
+  { href: "/categories", label: "Categorie", icon: "⊞", roles: ["ADMIN", "MANAGER", "VIEWER"] },
+  { href: "/reports", label: "Report", icon: "◐", roles: ["ADMIN", "MANAGER", "VIEWER"] },
   { href: "/settings", label: "Impostazioni", icon: "⚙", roles: ["ADMIN"] },
   { href: "/users", label: "Utenti", icon: "◉", roles: ["ADMIN"] },
 ] as const;

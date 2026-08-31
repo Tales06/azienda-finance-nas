@@ -7,6 +7,8 @@ type TransactionFilters = {
   type?: string;
   categoryId?: string;
   currencyCode?: string;
+  settlementStatus?: string;
+  createdById?: string;
 };
 
 export async function getCompany(companyId: string) {
@@ -31,6 +33,12 @@ export function buildTransactionWhere(companyId: string, filters: TransactionFil
   }
   if (filters.currencyCode) {
     where.currencyCode = filters.currencyCode;
+  }
+  if (filters.settlementStatus === "PENDING" || filters.settlementStatus === "SETTLED") {
+    where.settlementStatus = filters.settlementStatus;
+  }
+  if (filters.createdById) {
+    where.createdById = filters.createdById;
   }
   if (filters.from || filters.to) {
     where.transactionDate = {};
@@ -61,9 +69,9 @@ export async function getTransactions(companyId: string, filters: TransactionFil
   });
 }
 
-export async function getTransactionById(id: string, companyId: string) {
+export async function getTransactionById(id: string, companyId: string, createdById?: string) {
   return prisma.transaction.findFirst({
-    where: { id, companyId },
+    where: { id, companyId, ...(createdById ? { createdById } : {}) },
     include: {
       category: true,
       createdBy: {

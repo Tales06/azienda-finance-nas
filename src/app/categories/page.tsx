@@ -2,8 +2,14 @@ import { AppShell } from "@/components/app-shell";
 import { requireUser } from "@/lib/guards";
 import { getCategories } from "@/lib/queries";
 
+const categoryTypeLabels = {
+  INCOME: "Entrata",
+  EXPENSE: "Uscita",
+  BOTH: "Entrata e uscita"
+} as const;
+
 export default async function CategoriesPage() {
-  const user = await requireUser();
+  const user = await requireUser(["ADMIN", "MANAGER", "VIEWER"]);
   const categories = await getCategories(user.companyId);
   const canManage = ["ADMIN", "MANAGER"].includes(user.role);
 
@@ -75,7 +81,7 @@ export default async function CategoriesPage() {
                       <span className="color-swatch" style={{ backgroundColor: category.color }} />
                       {category.name}
                     </td>
-                    <td>{category.type}</td>
+                    <td>{categoryTypeLabels[category.type]}</td>
                     <td>
                       <span className={`badge ${category.isActive ? "badge-success" : "badge-warning"}`}>
                         {category.isActive ? "Attiva" : "Disattivata"}

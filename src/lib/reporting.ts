@@ -29,23 +29,33 @@ export function parseDateRange(inputFrom?: string, inputTo?: string) {
 }
 
 export function buildSummary(transactions: TransactionWithRelations[]) {
-  const incomeBaseCents = transactions
+  const settledTransactions = transactions.filter((item) => item.settlementStatus === "SETTLED");
+  const pendingTransactions = transactions.filter((item) => item.settlementStatus === "PENDING");
+  const incomeBaseCents = settledTransactions
     .filter((item) => item.type === "INCOME")
     .reduce((sum, item) => sum + item.amountBaseCents, 0);
-  const expenseBaseCents = transactions
+  const expenseBaseCents = settledTransactions
     .filter((item) => item.type === "EXPENSE")
     .reduce((sum, item) => sum + item.amountBaseCents, 0);
   return {
     incomeBaseCents,
     expenseBaseCents,
     balanceBaseCents: incomeBaseCents - expenseBaseCents,
-    count: transactions.length
+    count: settledTransactions.length,
+    totalCount: transactions.length,
+    pendingCount: pendingTransactions.length,
+    pendingIncomeBaseCents: pendingTransactions
+      .filter((item) => item.type === "INCOME")
+      .reduce((sum, item) => sum + item.amountBaseCents, 0),
+    pendingExpenseBaseCents: pendingTransactions
+      .filter((item) => item.type === "EXPENSE")
+      .reduce((sum, item) => sum + item.amountBaseCents, 0)
   };
 }
 
 export function buildCategoryBreakdown(transactions: TransactionWithRelations[], type: "INCOME" | "EXPENSE") {
   const map = new Map<string, { name: string; value: number; color: string }>();
-  for (const item of transactions.filter((entry) => entry.type === type)) {
+  for (const item of transactions.filter((entry) => entry.settlementStatus === "SETTLED" && entry.type === type)) {
     const key = item.categoryId;
     const existing = map.get(key);
     if (existing) {
@@ -64,7 +74,7 @@ export function buildCategoryBreakdown(transactions: TransactionWithRelations[],
 export function buildMonthlySeries(transactions: TransactionWithRelations[]) {
   const map = new Map<string, { month: string; income: number; expense: number; balance: number }>();
 
-  for (const item of transactions) {
+  for (const item of transactions.filter((entry) => entry.settlementStatus === "SETTLED")) {
     const date = new Date(item.transactionDate);
     const key = `${date.getFullYear()}-${`${date.getMonth() + 1}`.padStart(2, "0")}`;
     const existing = map.get(key) ?? { month: key, income: 0, expense: 0, balance: 0 };
@@ -82,7 +92,7 @@ export function buildMonthlySeries(transactions: TransactionWithRelations[]) {
 
 export function buildCurrencyBreakdown(transactions: TransactionWithRelations[]) {
   const map = new Map<string, { currency: string; originalCents: number; baseCents: number; count: number }>();
-  for (const item of transactions) {
+  for (const item of transactions.filter((entry) => entry.settlementStatus === "SETTLED")) {
     const existing = map.get(item.currencyCode) ?? {
       currency: item.currencyCode,
       originalCents: 0,

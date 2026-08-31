@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { cleanOptional, parseAmountToCents } from "@/lib/format";
 import { createAuditLog, getCompany, getLatestExchangeRate } from "@/lib/queries";
 import { redirectTo } from "@/lib/redirect";
+import { parseTransactionDate, parseTransactionDetails } from "@/lib/transaction-input";
 
 async function resolveBaseAmount(companyId: string, baseCurrency: string, currencyCode: string, amountCents: number, transactionDate: Date, explicitRate?: number | null) {
   if (currencyCode === baseCurrency) {
@@ -34,8 +35,9 @@ export async function POST(request: NextRequest) {
 
   const formData = await request.formData();
   const company = await getCompany(user.companyId);
+  const details = parseTransactionDetails(formData);
   const currencyCode = String(formData.get("currencyCode") || company.baseCurrency).toUpperCase();
-  const transactionDate = new Date(`${String(formData.get("transactionDate"))}T12:00:00`);
+  const transactionDate = parseTransactionDate(formData);
   const amountCents = parseAmountToCents(String(formData.get("amount") || "0"));
   const exchangeRateValue = cleanOptional(formData.get("exchangeRate"));
   const exchangeRate = exchangeRateValue ? Number(exchangeRateValue) : null;
@@ -47,19 +49,32 @@ export async function POST(request: NextRequest) {
     transactionDate,
     exchangeRate
   );
+  const category = await prisma.category.findFirst({
+    where: {
+      id: details.categoryId,
+      companyId: user.companyId,
+      isActive: true,
+      type: { in: [details.type, "BOTH"] }
+    }
+  });
+  if (!category) {
+    return redirectTo(request, "/transactions/new?error=invalid_category");
+  }
 
   const transaction = await prisma.transaction.create({
     data: {
       companyId: user.companyId,
-      categoryId: String(formData.get("categoryId")),
+      categoryId: details.categoryId,
       createdById: user.userId,
-      type: String(formData.get("type")) as "INCOME" | "EXPENSE",
+      type: details.type,
       amountCents,
       amountBaseCents,
       currencyCode,
       exchangeRate: currencyCode === company.baseCurrency ? null : resolvedRate,
       description: cleanOptional(formData.get("description")),
-      paymentMethod: cleanOptional(formData.get("paymentMethod")),
+      paymentMethod: details.paymentMethod,
+      settlementStatus: details.settlementStatus,
+      dueDate: details.dueDate,
       reference: cleanOptional(formData.get("reference")),
       notes: cleanOptional(formData.get("notes")),
       transactionDate
@@ -72,7 +87,7 @@ export async function POST(request: NextRequest) {
     action: "CREATE",
     entityType: "TRANSACTION",
     entityId: transaction.id,
-    description: `Creato movimento ${transaction.id}`
+    description: `Creato movimento ${transaction.id} (${details.settlementStatus})`
   });
 
   return redirectTo(request, "/transactions?success=created");

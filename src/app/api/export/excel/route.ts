@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import ExcelJS from "exceljs";
 import { getSessionUser } from "@/lib/auth";
+import { paymentMethodLabel, settlementStatusLabel } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
 import { getCompany, getTransactions } from "@/lib/queries";
 import { parseDateRange } from "@/lib/reporting";
@@ -10,19 +11,24 @@ export async function GET(request: NextRequest) {
   if (!user) {
     return new Response("Unauthorized", { status: 401 });
   }
+  if (user.role === "OPERATOR") {
+    return new Response("Forbidden", { status: 403 });
+  }
 
   const search = request.nextUrl.searchParams;
   const dateRange = parseDateRange(search.get("from") ?? undefined, search.get("to") ?? undefined);
   const type = search.get("type") ?? undefined;
   const categoryId = search.get("categoryId") ?? undefined;
   const currencyCode = search.get("currencyCode") ?? undefined;
+  const settlementStatus = search.get("settlementStatus") ?? undefined;
   const [company, transactions] = await Promise.all([
     getCompany(user.companyId),
     getTransactions(user.companyId, {
       ...dateRange,
       type,
       categoryId,
-      currencyCode
+      currencyCode,
+      settlementStatus
     })
   ]);
 
@@ -37,6 +43,8 @@ export async function GET(request: NextRequest) {
     { header: "Valuta", key: "currency", width: 10 },
     { header: "Importo", key: "amount", width: 16 },
     { header: `Importo ${company.baseCurrency}`, key: "baseAmount", width: 18 },
+    { header: "Stato", key: "settlementStatus", width: 22 },
+    { header: "Data prevista", key: "dueDate", width: 16 },
     { header: "Metodo", key: "paymentMethod", width: 18 },
     { header: "Riferimento", key: "reference", width: 18 },
     { header: "Operatore", key: "createdBy", width: 20 }
@@ -51,7 +59,9 @@ export async function GET(request: NextRequest) {
       currency: item.currencyCode,
       amount: item.amountCents / 100,
       baseAmount: item.amountBaseCents / 100,
-      paymentMethod: item.paymentMethod ?? "",
+      settlementStatus: settlementStatusLabel(item.type, item.settlementStatus),
+      dueDate: item.dueDate ? formatDate(item.dueDate) : "",
+      paymentMethod: paymentMethodLabel(item.paymentMethod),
       reference: item.reference ?? "",
       createdBy: item.createdBy.displayName
     });

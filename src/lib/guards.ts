@@ -8,7 +8,7 @@ export async function requireUser(roles?: UserRole[]): Promise<SessionUser> {
     redirect("/login");
   }
   if (roles && !roles.includes(user.role)) {
-    redirect("/dashboard?error=unauthorized");
+    redirect(user.role === "OPERATOR" ? "/transactions/new?error=unauthorized" : "/dashboard?error=unauthorized");
   }
   return user;
 }

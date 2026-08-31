@@ -468,6 +468,13 @@ button, input, select, textarea { font: inherit; }
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+.field-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
 .input, .select, .textarea {
   width: 100%;
   padding: 10px 12px;
@@ -486,6 +493,25 @@ button, input, select, textarea { font: inherit; }
 .input::placeholder, .textarea::placeholder { color: var(--muted); opacity: 0.7; }
 .textarea { min-height: 100px; resize: vertical; }
 .helper-text, .small-note { color: var(--muted); font-size: 0.82rem; }
+.checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  cursor: pointer;
+}
+.field label.checkbox-row {
+  font-size: inherit;
+  font-weight: inherit;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: normal;
+}
+.checkbox-row input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--primary); }
+.checkbox-row span { display: grid; gap: 3px; }
 
 /* ─── Toolbar & Actions ──────────────────────────────────────────────────── */
 .toolbar {
@@ -501,7 +527,7 @@ button, input, select, textarea { font: inherit; }
 
 .filters-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 14px;
   align-items: end;
 }

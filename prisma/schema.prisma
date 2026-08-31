@@ -19,6 +19,11 @@ enum TransactionType {
   EXPENSE
 }
 
+enum SettlementStatus {
+  PENDING
+  SETTLED
+}
+
 enum CategoryType {
   INCOME
   EXPENSE
@@ -80,6 +85,8 @@ model Transaction {
   exchangeRate    Float?
   description     String?
   paymentMethod   String?
+  settlementStatus SettlementStatus @default(SETTLED)
+  dueDate         DateTime?
   reference       String?
   notes           String?
   transactionDate DateTime
@@ -90,6 +97,7 @@ model Transaction {
   updatedAt       DateTime        @updatedAt
 
   @@index([companyId, transactionDate])
+  @@index([companyId, settlementStatus, dueDate])
   @@index([categoryId])
   @@index([currencyCode])
 }

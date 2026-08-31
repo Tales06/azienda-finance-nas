@@ -10,12 +10,15 @@ type RouteProps = {
 
 export async function POST(request: NextRequest, { params }: RouteProps) {
   const user = await getSessionUser();
-  if (!user || !["ADMIN", "MANAGER", "OPERATOR"].includes(user.role)) {
+  if (!user || !["ADMIN", "MANAGER"].includes(user.role)) {
     return redirectTo(request, "/login?error=expired");
   }
 
   const { id } = await params;
-  await prisma.transaction.delete({ where: { id } });
+  const deleted = await prisma.transaction.deleteMany({ where: { id, companyId: user.companyId } });
+  if (deleted.count === 0) {
+    return redirectTo(request, "/transactions?error=notfound");
+  }
   await createAuditLog({
     companyId: user.companyId,
     userId: user.userId,

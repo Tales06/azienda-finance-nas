@@ -10,7 +10,7 @@ type DashboardPageProps = {
 };
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
-  const user = await requireUser();
+  const user = await requireUser(["ADMIN", "MANAGER", "VIEWER"]);
   const company = await getCompany(user.companyId);
   const params = await searchParams;
   const from = typeof params.from === "string" ? params.from : undefined;
@@ -48,11 +48,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
       <section className="stat-grid">
         <article className="card stat-card">
-          <p className="label">Entrate</p>
+          <p className="label">Entrate reali</p>
           <p className="value kpi-positive">{formatCurrency(summary.incomeBaseCents, company.baseCurrency)}</p>
         </article>
         <article className="card stat-card">
-          <p className="label">Uscite</p>
+          <p className="label">Uscite reali</p>
           <p className="value kpi-negative">{formatCurrency(summary.expenseBaseCents, company.baseCurrency)}</p>
         </article>
         <article className="card stat-card">
@@ -66,6 +66,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           <p className={`value ${balanceDelta >= 0 ? "kpi-positive" : "kpi-negative"}`}>
             {formatCurrency(balanceDelta, company.baseCurrency)}
           </p>
+        </article>
+        <article className="card stat-card">
+          <p className="label">Da incassare</p>
+          <p className="value kpi-positive">{formatCurrency(summary.pendingIncomeBaseCents, company.baseCurrency)}</p>
+        </article>
+        <article className="card stat-card">
+          <p className="label">Da pagare</p>
+          <p className="value kpi-negative">{formatCurrency(summary.pendingExpenseBaseCents, company.baseCurrency)}</p>
         </article>
       </section>
 
@@ -123,8 +131,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               <strong>{company.baseCurrency}</strong>
             </div>
             <div className="mini-row">
-              <span>Movimenti nel periodo</span>
+              <span>Movimenti saldati nel periodo</span>
               <strong>{summary.count}</strong>
+            </div>
+            <div className="mini-row">
+              <span>Movimenti in attesa</span>
+              <strong>{summary.pendingCount}</strong>
             </div>
             <div className="mini-row">
               <span>Accesso attuale</span>

@@ -10,7 +10,7 @@ type ReportsPageProps = {
 };
 
 export default async function ReportsPage({ searchParams }: ReportsPageProps) {
-  const user = await requireUser();
+  const user = await requireUser(["ADMIN", "MANAGER", "VIEWER"]);
   const company = await getCompany(user.companyId);
   const params = await searchParams;
   const from = typeof params.from === "string" ? params.from : undefined;
@@ -52,11 +52,11 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
           <p className="value">{formatDate(dateRange.from)} → {formatDate(dateRange.to)}</p>
         </article>
         <article className="card stat-card">
-          <p className="label">Entrate totali</p>
+          <p className="label">Entrate reali</p>
           <p className="value kpi-positive">{formatCurrency(summary.incomeBaseCents, company.baseCurrency)}</p>
         </article>
         <article className="card stat-card">
-          <p className="label">Uscite totali</p>
+          <p className="label">Uscite reali</p>
           <p className="value kpi-negative">{formatCurrency(summary.expenseBaseCents, company.baseCurrency)}</p>
         </article>
         <article className="card stat-card">
@@ -64,6 +64,14 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
           <p className={`value ${summary.balanceBaseCents >= 0 ? "kpi-positive" : "kpi-negative"}`}>
             {formatCurrency(summary.balanceBaseCents, company.baseCurrency)}
           </p>
+        </article>
+        <article className="card stat-card">
+          <p className="label">Da incassare</p>
+          <p className="value kpi-positive">{formatCurrency(summary.pendingIncomeBaseCents, company.baseCurrency)}</p>
+        </article>
+        <article className="card stat-card">
+          <p className="label">Da pagare</p>
+          <p className="value kpi-negative">{formatCurrency(summary.pendingExpenseBaseCents, company.baseCurrency)}</p>
         </article>
       </section>
 

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { getSessionUser } from "@/lib/auth";
+import { paymentMethodLabel, settlementStatusLabel } from "@/lib/constants";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { getCompany, getTransactions } from "@/lib/queries";
 import { buildSummary, parseDateRange } from "@/lib/reporting";
@@ -10,12 +11,25 @@ export async function GET(request: NextRequest) {
   if (!user) {
     return new Response("Unauthorized", { status: 401 });
   }
+  if (user.role === "OPERATOR") {
+    return new Response("Forbidden", { status: 403 });
+  }
 
   const search = request.nextUrl.searchParams;
   const dateRange = parseDateRange(search.get("from") ?? undefined, search.get("to") ?? undefined);
+  const type = search.get("type") ?? undefined;
+  const categoryId = search.get("categoryId") ?? undefined;
+  const currencyCode = search.get("currencyCode") ?? undefined;
+  const settlementStatus = search.get("settlementStatus") ?? undefined;
   const [company, transactions] = await Promise.all([
     getCompany(user.companyId),
-    getTransactions(user.companyId, dateRange)
+    getTransactions(user.companyId, {
+      ...dateRange,
+      type,
+      categoryId,
+      currencyCode,
+      settlementStatus
+    })
   ]);
   const summary = buildSummary(transactions);
 
@@ -39,22 +53,49 @@ export async function GET(request: NextRequest) {
     });
     y -= (opts?.size ?? 11) + 8;
   };
+  const drawWrappedLine = (text: string, opts?: { bold?: boolean; size?: number; color?: [number, number, number] }) => {
+    const maxChars = 92;
+    const words = text.split(/\s+/);
+    let line = "";
+    for (const word of words) {
+      const nextLine = line ? `${line} ${word}` : word;
+      if (nextLine.length > maxChars && line) {
+        drawLine(line, opts);
+        line = word;
+      } else {
+        line = nextLine;
+      }
+    }
+    if (line) drawLine(line, opts);
+  };
 
   drawLine(company.name, { bold: true, size: 18 });
   drawLine(`Report movimenti dal ${formatDate(dateRange.from)} al ${formatDate(dateRange.to)}`);
-  drawLine(`Entrate: ${formatCurrency(summary.incomeBaseCents, company.baseCurrency)}`, { color: [0.08, 0.5, 0.24] });
-  drawLine(`Uscite: ${formatCurrency(summary.expenseBaseCents, company.baseCurrency)}`, { color: [0.8, 0.15, 0.15] });
-  drawLine(`Saldo: ${formatCurrency(summary.balanceBaseCents, company.baseCurrency)}`, { bold: true });
+  drawLine(`Entrate reali: ${formatCurrency(summary.incomeBaseCents, company.baseCurrency)}`, { color: [0.08, 0.5, 0.24] });
+  drawLine(`Uscite reali: ${formatCurrency(summary.expenseBaseCents, company.baseCurrency)}`, { color: [0.8, 0.15, 0.15] });
+  drawLine(`Saldo reale: ${formatCurrency(summary.balanceBaseCents, company.baseCurrency)}`, { bold: true });
+  drawLine(`Da incassare: ${formatCurrency(summary.pendingIncomeBaseCents, company.baseCurrency)}`, { color: [0.08, 0.5, 0.24] });
+  drawLine(`Da pagare: ${formatCurrency(summary.pendingExpenseBaseCents, company.baseCurrency)}`, { color: [0.8, 0.15, 0.15] });
 
   y -= 12;
-  drawLine("Ultimi movimenti inclusi:", { bold: true });
+  drawLine(`Movimenti inclusi: ${transactions.length}`, { bold: true });
 
-  for (const item of transactions.slice(0, 20)) {
-    drawLine(
-      `${formatDate(item.transactionDate)} · ${item.type} · ${item.category.name} · ${formatCurrency(item.amountCents, item.currencyCode)}${
-        item.currencyCode !== company.baseCurrency ? ` · base ${formatCurrency(item.amountBaseCents, company.baseCurrency)}` : ""
-      }`
+  for (const item of transactions) {
+    const dueDate = item.dueDate ? ` · prevista ${formatDate(item.dueDate)}` : "";
+    drawWrappedLine(
+      `${formatDate(item.transactionDate)} · ${item.type === "INCOME" ? "Entrata" : "Uscita"} · ${settlementStatusLabel(item.type, item.settlementStatus)}${dueDate}`,
+      { bold: true, size: 9 }
     );
+    drawWrappedLine(
+      `${item.category.name} · ${formatCurrency(item.amountCents, item.currencyCode)}${
+        item.currencyCode !== company.baseCurrency ? ` · base ${formatCurrency(item.amountBaseCents, company.baseCurrency)}` : ""
+      } · ${paymentMethodLabel(item.paymentMethod)}`,
+      { size: 9 }
+    );
+    if (item.description || item.reference) {
+      drawWrappedLine(`${item.description ?? ""}${item.reference ? ` · Rif. ${item.reference}` : ""}`, { size: 9 });
+    }
+    y -= 4;
   }
 
   const bytes = await pdf.save();
