@@ -74,13 +74,13 @@ export async function GET(request: NextRequest) {
   drawLine(`Entrate reali: ${formatCurrency(summary.incomeBaseCents, company.baseCurrency)}`, { color: [0.08, 0.5, 0.24] });
   drawLine(`Uscite reali: ${formatCurrency(summary.expenseBaseCents, company.baseCurrency)}`, { color: [0.8, 0.15, 0.15] });
   drawLine(`Saldo reale: ${formatCurrency(summary.balanceBaseCents, company.baseCurrency)}`, { bold: true });
-  drawLine(`Da incassare: ${formatCurrency(summary.pendingIncomeBaseCents, company.baseCurrency)}`, { color: [0.08, 0.5, 0.24] });
-  drawLine(`Da pagare: ${formatCurrency(summary.pendingExpenseBaseCents, company.baseCurrency)}`, { color: [0.8, 0.15, 0.15] });
+  drawLine(`Entrate da pagare: ${formatCurrency(summary.pendingIncomeBaseCents, company.baseCurrency)}`, { color: [0.08, 0.5, 0.24] });
+  drawLine(`Uscite da pagare: ${formatCurrency(summary.pendingExpenseBaseCents, company.baseCurrency)}`, { color: [0.8, 0.15, 0.15] });
 
   y -= 12;
   drawLine(`Movimenti inclusi: ${transactions.length}`, { bold: true });
 
-  for (const item of transactions) {
+  const drawTransaction = (item: (typeof transactions)[number]) => {
     const dueDate = item.dueDate ? ` · prevista ${formatDate(item.dueDate)}` : "";
     drawWrappedLine(
       `${formatDate(item.transactionDate)} · ${item.type === "INCOME" ? "Entrata" : "Uscita"} · ${settlementStatusLabel(item.type, item.settlementStatus)}${dueDate}`,
@@ -96,6 +96,27 @@ export async function GET(request: NextRequest) {
       drawWrappedLine(`${item.description ?? ""}${item.reference ? ` · Rif. ${item.reference}` : ""}`, { size: 9 });
     }
     y -= 4;
+  };
+
+  const settledTransactions = transactions.filter((item) => item.settlementStatus === "SETTLED");
+  const pendingTransactions = transactions.filter((item) => item.settlementStatus === "PENDING");
+
+  y -= 8;
+  drawLine(`Movimenti effettuati (${settledTransactions.length})`, { bold: true, size: 13 });
+  if (settledTransactions.length === 0) {
+    drawLine("Nessun movimento effettuato nel periodo.", { size: 9 });
+  }
+  for (const item of settledTransactions) {
+    drawTransaction(item);
+  }
+
+  y -= 8;
+  drawLine(`Movimenti da pagare (${pendingTransactions.length})`, { bold: true, size: 13 });
+  if (pendingTransactions.length === 0) {
+    drawLine("Nessun movimento da pagare nel periodo.", { size: 9 });
+  }
+  for (const item of pendingTransactions) {
+    drawTransaction(item);
   }
 
   const bytes = await pdf.save();

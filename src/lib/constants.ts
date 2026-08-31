@@ -32,7 +32,7 @@ export function paymentMethodLabel(value: string | null | undefined) {
 
 export function settlementStatusLabel(type: "INCOME" | "EXPENSE", status: "PENDING" | "SETTLED") {
   if (type === "INCOME") {
-    return status === "SETTLED" ? "Incassata" : "Da incassare";
+    return status === "SETTLED" ? "Pagamento ricevuto" : "Da pagare";
   }
   return status === "SETTLED" ? "Pagata" : "Da pagare";
 }

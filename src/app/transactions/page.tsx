@@ -116,8 +116,8 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
             <label htmlFor="settlementStatus">Stato</label>
             <select className="select" id="settlementStatus" name="settlementStatus" defaultValue={settlementStatus ?? ""}>
               <option value="">Tutti</option>
-              <option value="SETTLED">Pagati / incassati</option>
-              <option value="PENDING">Da pagare / incassare</option>
+              <option value="SETTLED">Movimenti effettuati</option>
+              <option value="PENDING">Movimenti da pagare</option>
             </select>
           </div>
           <div className="full-width form-actions">
@@ -143,11 +143,11 @@ export default async function TransactionsPage({ searchParams }: TransactionsPag
           </p>
         </article>
         <article className="card stat-card">
-          <p className="label">Da incassare</p>
+          <p className="label">Entrate da pagare</p>
           <p className="value kpi-positive">{formatCurrency(summary.pendingIncomeBaseCents, company.baseCurrency)}</p>
         </article>
         <article className="card stat-card">
-          <p className="label">Da pagare</p>
+          <p className="label">Uscite da pagare</p>
           <p className="value kpi-negative">{formatCurrency(summary.pendingExpenseBaseCents, company.baseCurrency)}</p>
         </article>
       </section>

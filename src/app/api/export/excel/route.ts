@@ -33,9 +33,7 @@ export async function GET(request: NextRequest) {
   ]);
 
   const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet("Movimenti");
-
-  sheet.columns = [
+  const columns = [
     { header: "Data", key: "date", width: 14 },
     { header: "Tipo", key: "type", width: 12 },
     { header: "Categoria", key: "category", width: 20 },
@@ -50,30 +48,36 @@ export async function GET(request: NextRequest) {
     { header: "Operatore", key: "createdBy", width: 20 }
   ];
 
-  for (const item of transactions) {
-    sheet.addRow({
-      date: formatDate(item.transactionDate),
-      type: item.type,
-      category: item.category.name,
-      description: item.description ?? "",
-      currency: item.currencyCode,
-      amount: item.amountCents / 100,
-      baseAmount: item.amountBaseCents / 100,
-      settlementStatus: settlementStatusLabel(item.type, item.settlementStatus),
-      dueDate: item.dueDate ? formatDate(item.dueDate) : "",
-      paymentMethod: paymentMethodLabel(item.paymentMethod),
-      reference: item.reference ?? "",
-      createdBy: item.createdBy.displayName
-    });
-  }
-
-  sheet.getRow(1).font = { bold: true };
-  sheet.eachRow((row, rowNumber) => {
-    if (rowNumber > 1) {
-      row.getCell("amount").numFmt = '#,##0.00';
-      row.getCell("baseAmount").numFmt = '#,##0.00';
+  const addSheet = (name: string, items: typeof transactions) => {
+    const sheet = workbook.addWorksheet(name);
+    sheet.columns = columns;
+    for (const item of items) {
+      sheet.addRow({
+        date: formatDate(item.transactionDate),
+        type: item.type === "INCOME" ? "Entrata" : "Uscita",
+        category: item.category.name,
+        description: item.description ?? "",
+        currency: item.currencyCode,
+        amount: item.amountCents / 100,
+        baseAmount: item.amountBaseCents / 100,
+        settlementStatus: settlementStatusLabel(item.type, item.settlementStatus),
+        dueDate: item.dueDate ? formatDate(item.dueDate) : "",
+        paymentMethod: paymentMethodLabel(item.paymentMethod),
+        reference: item.reference ?? "",
+        createdBy: item.createdBy.displayName
+      });
     }
-  });
+    sheet.getRow(1).font = { bold: true };
+    sheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) {
+        row.getCell("amount").numFmt = '#,##0.00';
+        row.getCell("baseAmount").numFmt = '#,##0.00';
+      }
+    });
+  };
+
+  addSheet("Movimenti effettuati", transactions.filter((item) => item.settlementStatus === "SETTLED"));
+  addSheet("Movimenti da pagare", transactions.filter((item) => item.settlementStatus === "PENDING"));
 
   const buffer = await workbook.xlsx.writeBuffer();
   return new Response(buffer, {

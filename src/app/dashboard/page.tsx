@@ -68,11 +68,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           </p>
         </article>
         <article className="card stat-card">
-          <p className="label">Da incassare</p>
+          <p className="label">Entrate da pagare</p>
           <p className="value kpi-positive">{formatCurrency(summary.pendingIncomeBaseCents, company.baseCurrency)}</p>
         </article>
         <article className="card stat-card">
-          <p className="label">Da pagare</p>
+          <p className="label">Uscite da pagare</p>
           <p className="value kpi-negative">{formatCurrency(summary.pendingExpenseBaseCents, company.baseCurrency)}</p>
         </article>
       </section>

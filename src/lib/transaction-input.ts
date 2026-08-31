@@ -21,6 +21,18 @@ function parseDate(value: FormDataEntryValue | null, fieldName: string) {
   return parsed;
 }
 
+function parseOptionalDate(value: FormDataEntryValue | null, fieldName: string) {
+  const dateValue = cleanOptional(value);
+  if (!dateValue) {
+    return null;
+  }
+  const parsed = new Date(`${dateValue}T12:00:00`);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error(`${fieldName} non valida`);
+  }
+  return parsed;
+}
+
 export function parseTransactionDetails(formData: FormData, previousPaymentMethod?: string | null): ParsedTransactionDetails {
   const type = String(formData.get("type") ?? "");
   if (type !== "INCOME" && type !== "EXPENSE") {
@@ -47,7 +59,7 @@ export function parseTransactionDetails(formData: FormData, previousPaymentMetho
     type,
     paymentMethod,
     settlementStatus,
-    dueDate: settlementStatus === "PENDING" ? parseDate(formData.get("dueDate"), "Data prevista") : null
+    dueDate: settlementStatus === "PENDING" ? parseOptionalDate(formData.get("dueDate"), "Data prevista") : null
   };
 }
 

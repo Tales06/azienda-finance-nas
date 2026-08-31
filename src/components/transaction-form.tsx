@@ -53,8 +53,11 @@ export function TransactionForm({ action, baseCurrency, categories, submitLabel,
     [categories, categoryId, type]
   );
   const legacyPaymentMethod = initial?.paymentMethod && !isPaymentMethod(initial.paymentMethod) ? initial.paymentMethod : null;
-  const statusLabel = type === "INCOME" ? (isSettled ? "Incassata" : "Da incassare") : isSettled ? "Pagata" : "Da pagare";
-  const dueDateLabel = type === "INCOME" ? "Data prevista di incasso" : "Data prevista di pagamento";
+  const statusLabel = type === "INCOME" ? (isSettled ? "Pagamento ricevuto" : "Da pagare") : isSettled ? "Pagata" : "Promemoria: da pagare";
+  const statusDescription = type === "INCOME"
+    ? (isSettled ? "L'importo è incluso nelle entrate effettuate." : "Il cliente deve ancora pagare: l'importo resta fuori dalle entrate effettuate.")
+    : (isSettled ? "L'uscita è inclusa nei dati effettuati." : "Promemoria di un pagamento da effettuare: l'uscita resta fuori dai dati effettuati.");
+  const dueDateLabel = type === "INCOME" ? "Data prevista di pagamento" : "Data promemoria (facoltativa)";
 
   function handleTypeChange(nextType: TransactionType) {
     setType(nextType);
@@ -134,14 +137,15 @@ export function TransactionForm({ action, baseCurrency, categories, submitLabel,
             <input id="isSettled" type="checkbox" checked={isSettled} onChange={(event) => setIsSettled(event.target.checked)} />
             <span>
               <strong>{statusLabel}</strong>
-              <span className="helper-text">{isSettled ? "Il movimento è incluso nel saldo reale." : "Il movimento resterà fuori dal saldo reale fino alla conferma."}</span>
+              <span className="helper-text">{statusDescription}</span>
             </span>
           </label>
         </div>
         {!isSettled ? (
           <div className="field">
             <label htmlFor="dueDate">{dueDateLabel}</label>
-            <input className="input" id="dueDate" type="date" name="dueDate" defaultValue={initial?.dueDate} required />
+            <input className="input" id="dueDate" type="date" name="dueDate" defaultValue={initial?.dueDate} />
+            <span className="helper-text">Puoi lasciarla vuota.</span>
           </div>
         ) : null}
         <div className="field full-width">
