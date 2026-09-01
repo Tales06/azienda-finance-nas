@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import type { SessionUser } from "@/lib/auth";
 import { ROLE_LABELS } from "@/lib/constants";
 import { LogoutForm } from "@/components/logout-form";
+import { NotificationsBell } from "@/components/notifications-bell";
 
 type AppShellProps = {
   title: string;
@@ -17,6 +18,7 @@ type AppShellProps = {
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: "◈", roles: ["ADMIN", "MANAGER", "VIEWER"] },
   { href: "/transactions", label: "Movimenti", icon: "⇄", roles: ["ADMIN", "MANAGER", "OPERATOR", "VIEWER"] },
+  { href: "/notifications", label: "Scadenze", icon: "🔔", roles: ["ADMIN", "MANAGER", "OPERATOR", "VIEWER"] },
   { href: "/categories", label: "Categorie", icon: "⊞", roles: ["ADMIN", "MANAGER", "VIEWER"] },
   { href: "/reports", label: "Report", icon: "◐", roles: ["ADMIN", "MANAGER", "VIEWER"] },
   { href: "/settings", label: "Impostazioni", icon: "⚙", roles: ["ADMIN"] },
@@ -92,6 +94,7 @@ export function AppShell({ title, description, currentPath, user, children }: Ap
           </div>
 
           <div className="sidebar-footer">
+            <NotificationsBell />
             <div className="user-card">
               <div className="user-avatar">{user.displayName.charAt(0).toUpperCase()}</div>
               <div className="user-info">
@@ -120,8 +123,11 @@ export function AppShell({ title, description, currentPath, user, children }: Ap
             <div className="brand-mark brand-mark-sm">AF</div>
             <span className="topbar-title">Azienda Finance</span>
           </div>
-          <div className="user-avatar user-avatar-sm topbar-user">
-            {user.displayName.charAt(0).toUpperCase()}
+          <div className="topbar-actions">
+            <NotificationsBell />
+            <div className="user-avatar user-avatar-sm">
+              {user.displayName.charAt(0).toUpperCase()}
+            </div>
           </div>
         </div>
 

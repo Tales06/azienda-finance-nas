@@ -108,6 +108,56 @@ docker compose up -d app
 
 Prova periodicamente il ripristino: un backup non verificato non garantisce il recupero dei dati.
 
+## Notifiche delle scadenze sul telefono (opzionale)
+
+L'app mostra sempre la campanella e la pagina **Scadenze**: contengono i movimenti in attesa, separati fra scaduti, oggi, domani e senza data. Per ricevere un avviso sul telefono il progetto include anche un piccolo server privato `ntfy`, avviato solo quando abiliti il profilo `notifications`.
+
+Il messaggio inviato al telefono contiene soltanto il numero di scadenze e il nome dell'azienda: non include importi, descrizioni, clienti o categorie.
+
+1. Sul NAS scegli un argomento lungo e non prevedibile, ad esempio `finance-una-stringa-casuale-lunga`. Non pubblicarlo e non riutilizzarlo altrove.
+
+2. Nel file `.env` del NAS aggiungi queste variabili. `IP_TAILSCALE_DEL_NAS` deve essere l'indirizzo Tailscale del NAS, in modo che l'iPhone possa raggiungerlo anche fuori casa:
+
+```env
+NTFY_PUBLIC_BASE_URL="http://IP_TAILSCALE_DEL_NAS:2586"
+NTFY_PORT="2586"
+NTFY_DATA_PATH="/volume1/docker/azienda-finance/ntfy"
+NTFY_PUBLISH_URL="http://ntfy"
+NTFY_TOPIC="finance-una-stringa-casuale-lunga"
+```
+
+3. Avvia il servizio e crea un utente privato. I primi due comandi chiedono una password: scegline una nuova e conservala nel gestore di password.
+
+```sh
+docker compose --profile notifications up -d ntfy
+docker compose exec ntfy ntfy user add finance-notify
+docker compose exec ntfy ntfy access finance-notify finance-una-stringa-casuale-lunga rw
+docker compose exec ntfy ntfy token add --label="Azienda Finance" finance-notify
+docker compose exec ntfy ntfy token list finance-notify
+```
+
+4. Copia il valore che inizia con `tk_` mostrato dall'ultimo comando e aggiungilo al `.env` senza condividerlo:
+
+```env
+NTFY_ACCESS_TOKEN="tk_valore_privato_generato_da_ntfy"
+```
+
+5. Sul telefono installa **ntfy**, imposta come server predefinito esattamente `NTFY_PUBLIC_BASE_URL`, accedi con `finance-notify` e iscriviti all'argomento `NTFY_TOPIC`.
+
+6. Verifica e pianifica l'invio quotidiano alle 08:00:
+
+```sh
+docker compose --profile notifications run --rm reminders
+```
+
+Nel `crontab` dell'utente root del NAS aggiungi questa riga:
+
+```cron
+0 8 * * * cd /volume1/docker/azienda-finance && /usr/bin/docker compose --profile notifications run --rm reminders >> /volume2/backup/database-finance/reminders.log 2>&1
+```
+
+Per iPhone il server e gia predisposto per gli avvisi immediati: il servizio centrale viene usato solo per richiamare l'app; il telefono recupera poi il messaggio dal tuo NAS via Tailscale.
+
 ## Aggiornamento dell'applicazione
 
 Prima crea un backup, poi aggiorna i file e ricostruisci:
