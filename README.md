@@ -124,16 +124,20 @@ NTFY_PORT="2586"
 NTFY_DATA_PATH="/volume1/docker/azienda-finance/ntfy"
 NTFY_PUBLISH_URL="http://ntfy"
 NTFY_TOPIC="finance-una-stringa-casuale-lunga"
+TAILSCALE_CONTAINER_NAME="tailscale"
+NTFY_RELAY_HOST="192.168.1.23"
 ```
 
 3. Avvia il servizio e crea un utente privato. I primi due comandi chiedono una password: scegline una nuova e conservala nel gestore di password.
 
 ```sh
-docker compose --profile notifications up -d ntfy
-docker compose exec ntfy ntfy user add finance-notify
-docker compose exec ntfy ntfy access finance-notify finance-una-stringa-casuale-lunga rw
-docker compose exec ntfy ntfy token add --label="Azienda Finance" finance-notify
-docker compose exec ntfy ntfy token list finance-notify
+docker compose --profile notifications up -d --build ntfy ntfy-relay
+docker compose exec ntfy ntfy user add finance-sender
+docker compose exec ntfy ntfy user add finance-phone
+docker compose exec ntfy ntfy access finance-sender finance-una-stringa-casuale-lunga write
+docker compose exec ntfy ntfy access finance-phone finance-una-stringa-casuale-lunga read
+docker compose exec ntfy ntfy token add --label="Azienda Finance" finance-sender
+docker compose exec ntfy ntfy token list finance-sender
 ```
 
 4. Copia il valore che inizia con `tk_` mostrato dall'ultimo comando e aggiungilo al `.env` senza condividerlo:
@@ -142,7 +146,15 @@ docker compose exec ntfy ntfy token list finance-notify
 NTFY_ACCESS_TOKEN="tk_valore_privato_generato_da_ntfy"
 ```
 
-5. Sul telefono installa **ntfy**, imposta come server predefinito esattamente `NTFY_PUBLIC_BASE_URL`, accedi con `finance-notify` e iscriviti all'argomento `NTFY_TOPIC`.
+5. Sul telefono installa **ntfy**, imposta come server predefinito esattamente `NTFY_PUBLIC_BASE_URL`, accedi con `finance-phone` e iscriviti all'argomento `NTFY_TOPIC`. L'utente del telefono può solo leggere; il token del NAS può solo inviare.
+
+Se Tailscale gira in un container separato, come nel caso del NAS UGREEN, abilita una sola volta il proxy Tailscale verso il relay interno:
+
+```sh
+docker exec tailscale tailscale serve --http=2586 http://127.0.0.1:8080
+```
+
+Con questa architettura il telefono usa `http://IP_TAILSCALE_DEL_NAS:2586`; non serve aprire porte sul router.
 
 6. Verifica e pianifica l'invio quotidiano alle 08:00:
 

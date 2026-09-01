@@ -84,6 +84,23 @@ services:
       retries: 3
       start_period: 40s
 
+  # The existing Tailscale container on the NAS uses its own Docker network.
+  # This relay shares that container's network namespace and forwards only
+  # localhost:8080 to ntfy on the NAS. Tailscale Serve targets this port.
+  ntfy-relay:
+    build:
+      context: .
+      target: notifier
+    container_name: azienda-finance-ntfy-relay
+    profiles: ["notifications"]
+    restart: unless-stopped
+    network_mode: "container:${TAILSCALE_CONTAINER_NAME:-tailscale}"
+    environment:
+      NTFY_RELAY_HOST: ${NTFY_RELAY_HOST:-192.168.1.23}
+      NTFY_RELAY_PORT: ${NTFY_PORT:-2586}
+      NTFY_RELAY_LISTEN_PORT: "8080"
+    command: ["node", "scripts/ntfy-relay.mjs"]
+
   backup:
     image: postgres:16
     profiles: ["maintenance"]

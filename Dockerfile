@@ -10,7 +10,7 @@ CMD ["sh", "-c", "npx prisma migrate deploy && node prisma/seed.js"]
 
 FROM deps AS notifier
 WORKDIR /app
-COPY scripts/send-reminders.mjs ./scripts/send-reminders.mjs
+COPY scripts/send-reminders.mjs scripts/ntfy-relay.mjs ./scripts/
 CMD ["node", "scripts/send-reminders.mjs"]
 
 FROM node:22-bookworm-slim AS builder
